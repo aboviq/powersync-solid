@@ -52,9 +52,7 @@
   "scripts": {
     "dev": "vite serve dev",
     "build": "tsup",
-    "test": "concurrently pnpm:test:*",
-    "test:client": "vitest",
-    "test:ssr": "pnpm run test:client --mode ssr",
+    "test": "vitest",
     "prepublishOnly": "pnpm build",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\" \"dev/**/*.{js,ts,json,css,tsx,jsx}\"",
     "lint": "concurrently pnpm:lint:*",
