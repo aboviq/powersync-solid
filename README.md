@@ -22,6 +22,65 @@ pnpm add @aboviq/powersync-solid
 
 ### Usage
 
+Follow the instructions in the [JavaScript Web SDK docs](https://docs.powersync.com/client-sdk-references/javascript-web#2-instantiate-the-powersync-database), then setup the `PowerSyncContext` provider:
+
 ```tsx
-import {{name_of_lib}} from '@aboviq/powersync-solid'
+import { PowerSyncContext } from '@aboviq/powersync-solid';
+import { db } from './db'; // <- the PowerSync database instance
+import ListsView from './ListsView';
+
+export default function App() {
+  return (
+    <PowerSyncContext.Provider value={db}>
+      <ListsView />
+    </PowerSyncContext.Provider>
+  );
+}
 ```
+
+Then use the hooks and helpers in your components:
+
+```tsx
+// ListsView.tsx
+import { useQuery } from '@aboviq/powersync-solid';
+
+export default function ListsView() {
+  const [lists] = useQuery('SELECT * FROM lists');
+
+  return (
+    <div>
+      <Show when={lists.loading}>
+        <p>Loading...</p>
+      </Show>
+      <Switch>
+        <Match when={lists.error}>
+          <span>Error: {lists.error}</span>
+        </Match>
+        <Match when={lists()}>
+          <div>{JSON.stringify(lists())}</div>
+        </Match>
+      </Switch>
+    </div>
+  );
+}
+```
+
+```tsx
+// Status.tsx
+import { useStatus } from '@aboviq/powersync-solid';
+
+export default function Status() {
+  const status = useStatus();
+
+  return (
+    <p>
+      <Show when={status().connected} fallback="Offline">
+        Online
+      </Show>{' '}
+      (last sync: {status().lastSyncedAt?.toLocaleDateString() ?? 'n/a'})
+    </p>
+  );
+}
+```
+
+**Note:** the `useQuery` has the same return type as SolidJS's [`createResource`](https://docs.solidjs.com/guides/fetching-data#using-createresource) hook.
