@@ -1,6 +1,9 @@
 {
   "name": "@aboviq/powersync-solid",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "SolidJS helpers, components and hooks for PowerSync",
   "license": "MIT",
   "author": {
