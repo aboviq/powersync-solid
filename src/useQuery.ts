@@ -57,7 +57,10 @@ export const useQuery = <T = any>(
       loading: { get: () => false },
     });
 
-    return [data as Resource<T[]>, { refetch: () => Promise.reject(wrappedError), mutate: setData }];
+    return [
+      data as Resource<T[]>,
+      { refetch: () => Promise.reject(wrappedError), mutate: setData },
+    ];
   }
 
   const { sqlStatement, parameters: queryParameters } = parsedQuery;
