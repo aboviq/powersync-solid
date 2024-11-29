@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/aboviq/powersync-solid/compare/v0.1.0...v0.1.1) (2024-11-29)
+
+
+### Miscellaneous Chores
+
+* release 0.1.1 ([d5ec163](https://github.com/aboviq/powersync-solid/commit/d5ec1635e8405da3cdbd24f0910726d0c4096824))
+
 ## 0.1.0 (2024-11-29)
 
 
