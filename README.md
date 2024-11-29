@@ -1,36 +1,27 @@
 <p>
-  <img width="100%" src="https://assets.solidjs.com/banner?type={{name_of_lib}}&background=tiles&project=%20" alt="{{name_of_lib}}">
+  <img width="100%" src="https://assets.solidjs.com/banner?type=powersync-solid&background=tiles&project=@Aboviq" alt="@aboviq/powersync-solid">
 </p>
 
-# {{name_of_lib}}
+# @aboviq/powersync-solid
 
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg?style=for-the-badge&logo=pnpm)](https://pnpm.io/)
 
-{{desc_of_lib}}
-
-> **Note** After using this template, you have to search and replace all `{{name_of_lib}}` and similar strings
-> with appropriate texts.
->
-> `{{name_of_lib}}` should be a **kebab-case** string representing the name of you monorepo.
->
-> `{{desc_of_lib}}` should be a **Normal case** string with the description of the repository.
->
-> `{{me}}` should be a **kebab-case** string from your profile URL.
+The `@aboviq/powersync-solid` package provides [SolidJS](https://www.solidjs.com) hooks and helpers for use with the [JavaScript Web SDK](https://github.com/powersync-ja/powersync-js/tree/main/packages/web). These hooks are designed to support reactivity, and can be used to automatically re-render SolidJS components when query results update or to access [PowerSync](https://www.powersync.com) connectivity status changes.
 
 ## Quick start
 
 Install it:
 
 ```bash
-npm i {{name_of_lib}}
+npm i @aboviq/powersync-solid
 # or
-yarn add {{name_of_lib}}
+yarn add @aboviq/powersync-solid
 # or
-pnpm add {{name_of_lib}}
+pnpm add @aboviq/powersync-solid
 ```
 
-Use it:
+### Usage
 
 ```tsx
-import {{name_of_lib}} from '{{name_of_lib}}'
+import {{name_of_lib}} from '@aboviq/powersync-solid'
 ```

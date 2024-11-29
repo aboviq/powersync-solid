@@ -1,17 +1,26 @@
 {
-  "name": "{{name_of_lib}}",
+  "name": "@aboviq/powersync-solid",
   "version": "0.0.0",
-  "description": "{{desc_of_lib}}",
+  "description": "SolidJS helpers, components and hooks for PowerSync",
   "license": "MIT",
-  "author": "{{me}}",
-  "contributors": [],
+  "author": {
+    "name": "Aboviq AB",
+    "email": "dev@aboviq.com",
+    "url": "https://www.aboviq.com"
+  },
+  "contributors": [
+    {
+      "name": "Joakim Carlstein",
+      "email": "joakim@aboviq.com"
+    }
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/{{me}}/{{name_of_lib}}.git"
+    "url": "git+https://github.com/aboviq/powersync-solid.git"
   },
-  "homepage": "https://github.com/{{me}}/{{name_of_lib}}#readme",
+  "homepage": "https://github.com/aboviq/powersync-solid#readme",
   "bugs": {
-    "url": "https://github.com/{{me}}/{{name_of_lib}}/issues"
+    "url": "https://github.com/aboviq/powersync-solid/issues"
   },
   "files": [
     "dist"
@@ -49,11 +58,12 @@
     "prepublishOnly": "pnpm build",
     "format": "prettier --ignore-path .gitignore -w \"src/**/*.{js,ts,json,css,tsx,jsx}\" \"dev/**/*.{js,ts,json,css,tsx,jsx}\"",
     "lint": "concurrently pnpm:lint:*",
-    "lint:code": "eslint --ignore-path .gitignore --max-warnings 0 src/**/*.{js,ts,tsx,jsx}",
+    "lint:code": "eslint --ignore-path .gitignore --max-warnings 0 \"src/**/*.{js,ts,tsx,jsx}\"",
     "lint:types": "tsc --noEmit",
     "update-deps": "pnpm up -Li"
   },
   "peerDependencies": {
+    "@powersync/common": "^1.21.0",
     "solid-js": "^1.6.0"
   },
   "devDependencies": {
@@ -77,11 +87,16 @@
     "vitest": "^1.6.0"
   },
   "keywords": [
-    "solid"
+    "solid",
+    "powersync"
   ],
-  "packageManager": "pnpm@9.1.1",
+  "packageManager": "pnpm@9.4.0",
   "engines": {
     "node": ">=18",
     "pnpm": ">=9.0.0"
+  },
+  "volta": {
+    "node": "20.18.0",
+    "pnpm": "9.4.0"
   }
 }
