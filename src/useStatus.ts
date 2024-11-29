@@ -6,14 +6,14 @@ import { usePowerSync } from './PowerSyncContext';
  * @returns The PowerSync Database status.
  * @example
  * const Component = () => {
- *   const status = usePowerSyncStatus();
+ *   const status = useStatus();
  *
  *   return <div>
- *     <Show when={status.connected} fallback="wifi-off">wifi</Show>
+ *     <Show when={status().connected} fallback="wifi-off">wifi</Show>
  *   </div>
  * };
  */
-export const usePowerSyncStatus = () => {
+export const useStatus = () => {
   const powerSync = usePowerSync();
   const [syncStatus, setSyncStatus] = createSignal(powerSync.currentStatus);
 
