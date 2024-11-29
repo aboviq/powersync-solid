@@ -5,8 +5,6 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  schedule:
-    - cron: "30 1 * * 0"
 
 jobs:
   analyze:
@@ -25,7 +23,7 @@ jobs:
           languages: javascript
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v1
+        uses: github/codeql-action/analyze@v2
         with:
           upload: false
           output: sarif-results
@@ -41,6 +39,6 @@ jobs:
           output: sarif-results/javascript.sarif
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: sarif-results/javascript.sarif
