@@ -282,4 +282,4 @@ export default function ListsView() {
 
 ## License
 
-Emigrate is licensed under the MIT license. See [LICENSE](LICENSE) for the full license text.
+`powersync-solid` is licensed under the MIT license. See [LICENSE](LICENSE) for the full license text.
