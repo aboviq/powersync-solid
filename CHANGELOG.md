@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/aboviq/powersync-solid/compare/v0.1.2...v0.2.0) (2024-12-04)
+
+
+### Features
+
+* add support for reactive queries and parameters ([fb0ed3f](https://github.com/aboviq/powersync-solid/commit/fb0ed3fe757316a0a10bab3ab23420d345ba7548))
+
 ## [0.1.2](https://github.com/aboviq/powersync-solid/compare/v0.1.1...v0.1.2) (2024-11-29)
 
 
