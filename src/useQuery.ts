@@ -6,7 +6,6 @@ import {
   type SQLWatchOptions,
 } from '@powersync/common';
 import {
-  createSignal,
   createEffect,
   onCleanup,
   type Accessor,
