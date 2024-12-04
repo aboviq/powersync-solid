@@ -1,5 +1,6 @@
 import {
   parseQuery,
+  runOnSchemaChange,
   type CompilableQuery,
   type ParsedQuery,
   type SQLWatchOptions,
@@ -8,10 +9,18 @@ import {
   createSignal,
   createEffect,
   onCleanup,
+  type Accessor,
   type ResourceReturn,
   type Resource,
+  type Setter,
 } from 'solid-js';
+import { createStore } from 'solid-js/store';
 import { usePowerSync } from './PowerSyncContext';
+
+type MaybeAccessor<T> = T | Accessor<T>;
+
+const toValue = <T>(value: MaybeAccessor<T>): T =>
+  typeof value === 'function' ? (value as () => T)() : value;
 
 export interface AdditionalOptions extends Omit<SQLWatchOptions, 'signal'> {
   runQueryOnce?: boolean;
@@ -37,156 +46,136 @@ export interface AdditionalOptions extends Omit<SQLWatchOptions, 'signal'> {
  * }
  */
 export const useQuery = <T = any>(
-  query: string | CompilableQuery<T>,
-  parameters: any[] = [],
+  query: MaybeAccessor<string | CompilableQuery<T>>,
+  parameters: MaybeAccessor<any[]> = [],
   options: AdditionalOptions = { runQueryOnce: false },
 ): ResourceReturn<T[], undefined> => {
-  let parsedQuery: ParsedQuery;
   const powerSync = usePowerSync();
-  const [data, setData] = createSignal<T[] | undefined>(undefined);
 
-  try {
-    parsedQuery = parseQuery(query, parameters);
-  } catch (error) {
-    const wrappedError = new Error('PowerSync failed to parse query: ' + (error as Error).message);
-    wrappedError.cause = error;
+  const [store, setStore] = createStore<{
+    data?: T[];
+    error?: Error;
+    state: 'pending' | 'ready' | 'refreshing';
+  }>({
+    data: undefined,
+    error: undefined,
+    state: 'pending',
+  });
 
-    Object.defineProperties(data, {
-      state: { get: () => 'error' },
-      error: { get: () => wrappedError },
-      loading: { get: () => false },
-    });
+  const data = (() => store.data) as Resource<T[]>;
+  const setStoreData = setStore.bind(null, 'data');
+  // @ts-expect-error - The signature is correct
+  const setData: Setter<T[] | undefined> = (...args) => {
+    setStoreData(...args);
+    return store.data;
+  };
 
-    return [
-      data as Resource<T[]>,
-      { refetch: () => Promise.reject(wrappedError), mutate: setData },
-    ];
-  }
+  Object.defineProperties(data, {
+    state: { get: () => (store.error ? 'errored' : store.state) },
+    error: { get: () => store.error },
+    loading: { get: () => store.state !== 'ready' },
+    latest: { get: () => store.data },
+  });
 
-  const { sqlStatement, parameters: queryParameters } = parsedQuery;
-
-  const [error, setError] = createSignal<Error | undefined>(undefined);
-  const [isLoading, setIsLoading] = createSignal(true);
-  const [isFetching, setIsFetching] = createSignal(true);
-  const [tables, setTables] = createSignal<string[]>([]);
-
-  const memoizedParams = () => JSON.stringify(queryParameters);
-  // const memoizedOptions = () => JSON.stringify(options);
-  let abortController = new AbortController();
-  let previousQueryRef = { sqlStatement, memoizedParams: memoizedParams() };
-
-  const shouldFetch = () =>
-    previousQueryRef.sqlStatement !== sqlStatement ||
-    JSON.stringify(previousQueryRef.memoizedParams) != memoizedParams();
+  let fetchData: (() => Promise<void>) | undefined;
 
   const handleResult = (result: T[]) => {
-    previousQueryRef = { sqlStatement, memoizedParams: memoizedParams() };
-    setData(result);
-    setIsLoading(false);
-    setIsFetching(false);
-    setError(undefined);
+    setStore({ data: result, error: undefined, state: 'ready' });
   };
 
   const handleError = (e: Error) => {
-    previousQueryRef = { sqlStatement, memoizedParams: memoizedParams() };
-    setData([]);
-    setIsLoading(false);
-    setIsFetching(false);
     const wrappedError = new Error('PowerSync failed to fetch data: ' + e.message);
     wrappedError.cause = e;
-    setError(wrappedError);
+
+    setStore((store) => ({ data: store.data, error: wrappedError, state: 'ready' }));
   };
 
-  const fetchData = async () => {
-    setIsFetching(true);
+  const _fetchData = async (executor: () => Promise<T[]>) => {
+    setStore('state', (state) => (state === 'pending' ? state : 'refreshing'));
+
     try {
-      const result =
-        typeof query == 'string'
-          ? await powerSync.getAll<T>(sqlStatement, queryParameters)
-          : await query.execute();
+      const result = await executor();
       handleResult(result);
     } catch (e) {
       handleError(e as Error);
     }
   };
 
-  const fetchTables = async () => {
+  const watchQuery = async (sql: string, parameters: any[], abortSignal: AbortSignal) => {
+    let resolvedTables = [];
+
     try {
-      const tablesResult = await powerSync.resolveTables(sqlStatement, queryParameters, options);
-      setTables(tablesResult);
+      resolvedTables = await powerSync.resolveTables(sql, parameters, options);
     } catch (e) {
-      handleError(e as Error);
+      const wrappedError = new Error('PowerSync failed to parse query: ' + (e as Error).message);
+      wrappedError.cause = e;
+
+      handleError(wrappedError);
+      return;
     }
+
+    await fetchData?.();
+
+    if (options.runQueryOnce) {
+      return;
+    }
+
+    powerSync.onChangeWithCallback(
+      {
+        onChange: async () => {
+          await fetchData?.();
+        },
+        onError: handleError,
+      },
+      {
+        ...options,
+        signal: abortSignal,
+        tables: resolvedTables,
+      },
+    );
   };
 
   createEffect(() => {
-    const updateData = async () => {
-      await fetchTables();
-      await fetchData();
-    };
-    updateData();
-    const l = powerSync.registerListener({
-      schemaChanged: updateData,
-    });
-    onCleanup(() => l());
-  });
+    const abortController = new AbortController();
+    const { signal } = abortController;
 
-  createEffect(() => {
-    // Abort any previous watches
-    abortController.abort();
-    abortController = new AbortController();
-    if (!options.runQueryOnce) {
-      powerSync.onChangeWithCallback(
-        {
-          onChange: async () => {
-            await fetchData();
-          },
-          onError(e) {
-            handleError(e);
-          },
-        },
-        {
-          ...options,
-          signal: abortController.signal,
-          tables: tables(),
-        },
-      );
-    }
     onCleanup(() => {
       abortController.abort();
     });
-  });
 
-  Object.defineProperties(data, {
-    state: {
-      get: () => {
-        if (error()) {
-          return 'error';
-        }
+    let parsedQuery: ParsedQuery;
+    const queryValue = toValue(query);
 
-        if (isLoading()) {
-          return 'pending';
-        }
+    try {
+      parsedQuery = parseQuery(
+        queryValue,
+        toValue(parameters).map((parameter) => toValue(parameter)),
+      );
+    } catch (e) {
+      handleError(e as Error);
+      return;
+    }
 
-        if (isFetching()) {
-          return 'refreshing';
-        }
+    const executor =
+      typeof queryValue === 'string'
+        ? () => powerSync.getAll<T>(parsedQuery.sqlStatement, parsedQuery.parameters)
+        : () => queryValue.execute();
+    fetchData = () => _fetchData(executor);
 
-        return 'ready';
-      },
-    },
-    error: { get: () => error() },
-    loading: { get: () => isFetching() || shouldFetch() },
-    latest: { get: () => data() },
+    const updateData = async () => {
+      await watchQuery(parsedQuery.sqlStatement, parsedQuery.parameters, signal);
+    };
+
+    runOnSchemaChange(updateData, powerSync, { signal });
   });
 
   return [
-    data as Resource<T[]>,
+    data,
     {
       refetch: async () => {
-        await fetchData();
+        await fetchData?.();
 
-        return data();
+        return store.data;
       },
       mutate: setData,
     },

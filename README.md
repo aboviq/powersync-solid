@@ -84,3 +84,202 @@ export default function Status() {
 ```
 
 **Note:** the `useQuery` has the same return type as SolidJS's [`createResource`](https://docs.solidjs.com/guides/fetching-data#using-createresource) hook.
+
+## Watched Queries
+
+The `useQuery` hook is designed to automatically re-render the component when any of the following change:
+
+- PowerSync's connection status (can be easily accessed via the `useStatus` hook)
+- The query result changes (e.g. when a new record is inserted, updated, or deleted)
+- The query itself changes (e.g. when a query signal is used that is updated with new state)
+- The query's parameters change (e.g. when any parameter is a signal and it's updated with new state)
+
+### Example - a reactive query
+
+```tsx
+import { useQuery } from '@aboviq/powersync-solid';
+
+export default function ListsView() {
+  const [sortOrder, setSortOrder] = createSignal('ASC');
+  const [lists] = useQuery(() => `SELECT * FROM lists ORDER BY name ${sortOrder()}`);
+
+  const toggleSortOrder = () => {
+    setSortOrder((sortOrder) => (sortOrder === 'ASC' ? 'DESC' : 'ASC'));
+  };
+
+  return (
+    <div>
+      <Show when={lists.loading}>
+        <p>Loading...</p>
+      </Show>
+      <Switch>
+        <Match when={lists.error}>
+          <span>Error: {lists.error}</span>
+        </Match>
+        <Match when={lists()}>
+          <button onClick={toggleSortOrder}>Toggle sort order</button>
+          <div>{JSON.stringify(lists())}</div>
+        </Match>
+      </Switch>
+    </div>
+  );
+}
+```
+
+### Example - reactive parameters
+
+```tsx
+import { useQuery } from '@aboviq/powersync-solid';
+
+export default function ListsView() {
+  const [page, setPage] = createSignal(1);
+  const offet = () => (page() - 1) * 10;
+  const [lists] = useQuery('SELECT * FROM lists LIMIT 10 OFFSET ?', [offset]);
+
+  const previousPage = () => {
+    setPage((page) => page - 1);
+  };
+
+  const nextPage = () => {
+    setPage((page) => page + 1);
+  };
+
+  return (
+    <div>
+      <Show when={lists.loading}>
+        <p>Loading...</p>
+      </Show>
+      <Switch>
+        <Match when={lists.error}>
+          <span>Error: {lists.error}</span>
+        </Match>
+        <Match when={lists()}>
+          <button disabled={page() > 1} onClick={previousPage}>
+            Previous page
+          </button>
+          <button disabled={lists()?.length !== 10} onClick={nextPage}>
+            Next page
+          </button>
+          <div>{JSON.stringify(lists())}</div>
+        </Match>
+      </Switch>
+    </div>
+  );
+}
+```
+
+## Using with an ORM
+
+### Example - using [Kysely](https://kysely.dev/)
+
+Set up the Kysely database instance according to the [PowerSync Kysely ORM docs](https://docs.powersync.com/client-sdk-references/javascript-web/javascript-orm/kysely).
+
+This will also give you automatic TypeScript type inference for your queries.
+
+```tsx
+import { useQuery } from '@aboviq/powersync-solid';
+import { db } from './db'; // <- the file where you have configured your Kysely instance
+
+export default function ListsView() {
+  const [lists] = useQuery(db.selectFrom('lists').selectAll('lists'));
+
+  return (
+    <div>
+      <Show when={lists.loading}>
+        <p>Loading...</p>
+      </Show>
+      <Switch>
+        <Match when={lists.error}>
+          <span>Error: {lists.error}</span>
+        </Match>
+        <Match when={lists()}>
+          <div>{JSON.stringify(lists())}</div>
+        </Match>
+      </Switch>
+    </div>
+  );
+}
+```
+
+### Example - using [Kysely](https://kysely.dev/) with reactive parameters
+
+To use reactive parameters with Kysely, you can pass a function that returns the query to `useQuery`.
+
+```tsx
+import { useQuery } from '@aboviq/powersync-solid';
+import { db } from './db'; // <- the file where you have configured your Kysely instance
+
+export default function ListsView() {
+  const [page, setPage] = createSignal(1);
+  const [lists] = useQuery(() =>
+    db
+      .selectFrom('lists')
+      .selectAll('lists')
+      .limit(10)
+      .offset((page() - 1) * 10),
+  );
+
+  const previousPage = () => {
+    setPage((page) => page - 1);
+  };
+
+  const nextPage = () => {
+    setPage((page) => page + 1);
+  };
+
+  return (
+    <div>
+      <Show when={lists.loading}>
+        <p>Loading...</p>
+      </Show>
+      <Switch>
+        <Match when={lists.error}>
+          <span>Error: {lists.error}</span>
+        </Match>
+        <Match when={lists()}>
+          <button disabled={page() > 1} onClick={previousPage}>
+            Previous page
+          </button>
+          <button disabled={lists()?.length !== 10} onClick={nextPage}>
+            Next page
+          </button>
+          <div>{JSON.stringify(lists())}</div>
+        </Match>
+      </Switch>
+    </div>
+  );
+}
+```
+
+## TypeScript types without an ORM
+
+If you're not using an ORM, you can still get TypeScript types for your queries by using the `useQuery` hook with a type parameter.
+
+```tsx
+import { useQuery } from '@aboviq/powersync-solid';
+import type { ListRecord } from './schema'; // <- the file where you have defined your PowerSync database schema
+
+export default function ListsView() {
+  const [lists] = useQuery<ListRecord>('SELECT * FROM lists');
+
+  return (
+    <div>
+      <Show when={lists.loading}>
+        <p>Loading...</p>
+      </Show>
+      <Switch>
+        <Match when={lists.error}>
+          <span>Error: {lists.error}</span>
+        </Match>
+        <Match when={lists()}>
+          <div>{JSON.stringify(lists())}</div>
+        </Match>
+      </Switch>
+    </div>
+  );
+}
+```
+
+## License
+
+Emigrate is licensed under the MIT license. See [LICENSE](LICENSE) for the full license text.
