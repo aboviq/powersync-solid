@@ -19,7 +19,7 @@ export const useStatus = () => {
 
   createEffect(() =>
     powerSync.registerListener({
-      statusChanged: status => {
+      statusChanged: (status) => {
         setSyncStatus(status);
       },
     }),
