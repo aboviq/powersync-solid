@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/aboviq/powersync-solid/compare/v0.2.0...v0.2.1) (2024-12-04)
+
+
+### Bug Fixes
+
+* correct a copy paste mistake ([4b5db36](https://github.com/aboviq/powersync-solid/commit/4b5db361cb0b6382b89180de44136c0c6e624546))
+
 ## [0.2.0](https://github.com/aboviq/powersync-solid/compare/v0.1.2...v0.2.0) (2024-12-04)
 
 
